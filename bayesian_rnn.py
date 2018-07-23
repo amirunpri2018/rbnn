@@ -5,7 +5,6 @@ import reader
 import torch.nn as nn
 from tqdm import tqdm
 import models
-from torch.autograd import Variable
 import torch
 
 
@@ -63,7 +62,7 @@ def run_epoch(model, criterion, train_data, corpus, lr, epoch):
         total_kl_loss += kl_loss.data
 
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-        torch.nn.utils.clip_grad_norm(model.parameters(), args.max_grad_norm)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
 
         for p in model.parameters():
             p.data.add_(-lr, p.grad.data)
@@ -85,8 +84,8 @@ def repackage_hidden(h):
 
     hidden0, hidden1 = h
 
-    hidden0 = (Variable(hidden0[0].data), Variable(hidden0[1].data))
-    hidden1 = (Variable(hidden1[0].data), Variable(hidden1[1].data))
+    hidden0 = (hidden0[0].detach(), hidden0[1].detach())
+    hidden1 = (hidden1[0].detach(), hidden1[1].detach())
 
     h = hidden0, hidden1
 
@@ -107,8 +106,8 @@ def batchify(data, batch_size):
 
 def get_batch(source, i, evaluation=False):
     seq_len = min(args.num_steps, len(source) - 1 - i)
-    data = Variable(source[i:i + seq_len], volatile=evaluation)
-    target = Variable(source[i + 1:i + 1 + seq_len].view(-1))
+    data = source[i:i + seq_len]
+    target = source[i + 1:i + 1 + seq_len].view(-1)
     return data, target
 
 
@@ -186,7 +185,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-model', type=str, default='small',
                         choices=['small', 'medium', 'large', 'test'])
-    parser.add_argument('--data_path', type=str, default='./data/simple-examples/data')
+    parser.add_argument('--data_path', type=str, default='./data/penn')
     parser.add_argument('--save_path', type=str, default='./model/saved_new')
     parser.add_argument('--prior_pi', type=float, default=0.25)
     parser.add_argument('--log_sigma1', type=float, default=-1.0)

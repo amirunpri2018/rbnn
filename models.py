@@ -113,7 +113,7 @@ class BayesLSTM(Module):
             # This way of creating the epsilon variable is faster than
             # from numpy or torch.randn or FloatTensor.normal_ when mean is already
             # on the GPU
-            eps = Variable(mean.data.new(mean.size()).normal_(0., 1.))
+            eps = mean.data.new(mean.size()).normal_(0., 1.)
             weights = mean + eps * sigma
 
         # Roll out hidden
@@ -158,10 +158,10 @@ class BayesLSTM(Module):
         """
 
         if hidden is None:
-            hidden0 = Variable(x.data.new(x.size(1), self.hidden_size).zero_())
+            hidden0 = x.data.new(x.size(1), self.hidden_size).zero_()
             hidden0 = (hidden0, hidden0)
 
-            hidden1 = Variable(x.data.new(x.size(1), self.hidden_size).zero_())
+            hidden1 = x.data.new(x.size(1), self.hidden_size).zero_()
             hidden1 = (hidden1, hidden1)
         else:
             hidden0, hidden1 = hidden
@@ -218,14 +218,14 @@ class BayesEmbedding(Module):
             # This way of creating the epsilon variable is faster than
             # from numpy or torch.randn or FloatTensor.normal_ when mean is already
             # on the GPU
-            eps = Variable(mean.data.new(mean.size()).normal_(0., 1.))
+            eps = mean.data.new(mean.size()).normal_(0., 1.)
             weights = mean + eps * sigma
 
         # Compute KL divergence
         self.kl = compute_KL(weights.view(-1), mean.view(-1), sigma.view(-1),
                              self.prior)
 
-        after_embed = self._backend.Embedding.apply(
+        after_embed = F.embedding(
             input, weights,
             self.padding_idx, self.max_norm, self.norm_type,
             self.scale_grad_by_freq, self.sparse
@@ -287,7 +287,7 @@ class BayesLinear(Module):
             # This way of creating the epsilon variable is faster than
             # from numpy or torch.randn or FloatTensor.normal_ when mean is already
             # on the GPU
-            eps = Variable(mean.data.new(mean.size()).normal_(0., 1.))
+            eps = mean.data.new(mean.size()).normal_(0., 1.)
             weights = mean + eps * sigma
 
         logits = F.linear(input, weights, self.bias)
