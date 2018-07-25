@@ -54,12 +54,11 @@ def run_epoch(model, criterion, train_data, corpus, lr, epoch):
         hidden = repackage_hidden(hidden)
 
         likelihood_loss = criterion(output.view(-1, ntokens), targets) / args.batch_size
-        # likelihood_loss.backward()
-        total_likelihood_loss += likelihood_loss.data
+        total_likelihood_loss += likelihood_loss.detach()
         kl_loss = model.kl / (args.batch_size * train_data.size(0) // args.num_steps)
         loss = likelihood_loss + kl_loss
         loss.backward()
-        total_kl_loss += kl_loss.data
+        total_kl_loss += kl_loss.detach()
 
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
@@ -68,8 +67,8 @@ def run_epoch(model, criterion, train_data, corpus, lr, epoch):
             p.data.add_(-lr, p.grad.data)
 
         if batch % args.log_interval == 0 and batch > 0:
-            cur_likelihood_loss = total_likelihood_loss[0] / (args.log_interval * args.num_steps)
-            cur_kl_loss = total_kl_loss[0] / args.log_interval
+            cur_likelihood_loss = total_likelihood_loss / (args.log_interval * args.num_steps)
+            cur_kl_loss = total_kl_loss / args.log_interval
             elapsed = time.time() - start_time
             print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                   'loss {:5.2f} | ppl {:8.2f} | KL {:8.2f}'.format(
@@ -122,7 +121,7 @@ def evaluate(model, corpus, criterion_eval, eval_batch_size, data_source):
         data, targets = get_batch(data_source, i, evaluation=True)
         output, hidden = model(data, hidden)
         output_flat = output.view(-1, ntokens)
-        total_loss += len(data) * criterion_eval(output_flat, targets).data
+        total_loss += len(data) * criterion_eval(output_flat, targets).detach()
         hidden = repackage_hidden(hidden)
 
     model.inference = False
@@ -191,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_sigma1', type=float, default=-1.0)
     parser.add_argument('--log_sigma2', type=float, default=-7.0)
     parser.add_argument('--inference_mode', type=str, default='mu', choices=['mu', 'sample'])
-    parser.add_argument('--bbb_bias', action='store_true', help='Enable biases to be BBB variables')
+    parser.add_argument('--bbb_bias', action='store_true', help='Enable biases to be BBB 	s')
     parser.add_argument('--var_mode', type=str, default="BBB",
                         choices=["BBB", "standard"], help='Enable biases to be BBB variables')
     parser.add_argument('--cuda', action="store_true")
